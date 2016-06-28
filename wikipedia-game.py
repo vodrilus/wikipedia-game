@@ -3,7 +3,7 @@
 How many clicks to Hitler?
 https://en.wikipedia.org/wiki/Wikipedia:Wiki_Game
 
-Still totally broken."""
+No win condition yet."""
 
 import tkinter as tk
 import tkinter.messagebox as tkmb
@@ -13,54 +13,90 @@ import random
 class Application(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master)
+        self.current_page = None
         self.pack()
         self.createWidgets()
-        self.current_page = None
+        
         self.num_of_clicks = 0
 
     def createWidgets(self):
         """Create all essential widgets."""
+
         self.control_group = tk.Frame(self)
         
         self.start_button = tk.Button(self.control_group)
         self.start_button['text'] = 'New Game'
-        self.start_button['command'] = self.newGame
-        self.start_button.pack(side='top')
-
-        self.links_button = tk.Button(self.control_group)
-        self.links_button['text'] = 'Print Links'
-        self.links_button['command'] = self.printLinks
-        self.links_button.pack(side='top')
+        self.start_button['command'] = self.newGame     
 
         self.QUIT = tk.Button(self.control_group, text='QUIT', fg='red',
                               command=root.destroy)
-        self.QUIT.pack(side='bottom')
         
-        self.control_group.pack(side='right')
+        self.current_page_label = tk.Label(self.control_group)
+        self.current_page_label['text'] = 'Current Page'
 
-        self.link_group = tk.Frame(self)
-        self.link_group.pack(side='right')
+        self.current_clicks_label = tk.Label(self.control_group)
+        self.current_clicks_label['text'] = 'Clicks: 0'
+        
+        self.current_page_label.pack(side='bottom')
+        self.current_clicks_label.pack(side='bottom')
+        self.start_button.pack(side='bottom')
+        
+        
+        self.control_group.pack(side='top', fill='x', expand=True)
 
-        self.scrollbar = tk.Scrollbar(self)
-        self.scrollbar.pack(side='right', fill=tk.Y)
-        self.scrollbar.config(command=self.link_group.yview)
+        self.canvas = tk.Canvas(root, borderwidth=0, bg='#ffffff')
+        
+        self.scrollbar = tk.Scrollbar(root, orient='vertical',
+                                      command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
 
-        self.link_group.config(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.pack(side='right', fill='y')
+        self.canvas.pack(side='left', fill='both', expand=True)
+        
+        
 
+    def createLinkButtons(self):
+        print('Creating link buttons.')
+        if self.current_page is None:
+            print('-Current page is None.')
+            return
+        print('-Destroying children.')
+        for child in self.frame.winfo_children():
+            child.destroy()
+            print('-- Child destroyed.')
+        print('-Creating new buttons.')
+        for i in range(len(self.current_page.links)):
+            link = self.current_page.links[i]
+            #print(link)
+            button= tk.Button(self.frame, text=link,
+                              command=(lambda l=link: self.followLink(l)))
+            button.grid(row=i//4, column=i%4)
+            print('--Button created.')
+        print('-DONE Creating link buttons.')
+
+    def onFrameConfigure(self, event):
+        self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+        
     def newGame(self):
         """Start a new game"""
+        self.num_of_clicks = 0
+        self.current_page_label['text'] = 'Clicks: 0'
+
+        self.canvas.delete('all')
+
+        self.frame = tk.Frame(self.canvas, bg='#ffffff')
+        self.canvas.create_window((0,0), window=self.frame, anchor='nw',
+                                  tags='self.frame')
+
+        self.frame.bind('<Configure>', self.onFrameConfigure)
+
+        self.createLinkButtons()
 
         random_title = wp.random()
 
-        self.followLink(random_title)
+        self.followLink(random_title, counts=False)
 
-        
-
-    def printLinks(self):
-        for link in self.current_page.links:
-            print(link)
-
-    def followLink(self, title):
+    def followLink(self, title, counts=True):
         for i in range(100):
             try:
                 self.current_page = wp.page(title=title)
@@ -74,25 +110,28 @@ class Application(tk.Frame):
             except Exception as e:
                 tkmb.showerror(str(type(e)), str(e))
 
-        print(self.current_page.title)
+        self.current_page_label['text'] = self.current_page.title
 
-        self.createLinkButtons()
-        
-    def createLinkButtons(self):
-        for slave in self.link_group.slaves():
-            slave.destroy()
-        for link in self.current_page.links:
-            print(link)
-            new_button = tk.Button(self.link_group, text=link,
-                                   command=(lambda: self.followLink(link)))
-            new_button.pack()
-        self.link_group.pack(fill=tk.BOTH, expand=1)
+        if self.current_page.title == 'Adolf Hitler':
+            self.winGame()
+        else:
+            self.createLinkButtons()
+            if counts:
+                self.num_of_clicks += 1
+                new_clicks_text = 'Clicks: {!s}'.format(self.num_of_clicks)
+                self.current_clicks_label['text'] = new_clicks_text
+
+    def winGame(self):
+        self.canvas.delete('all')
+        self.hitler_image=tk.PhotoImage('images/smilinghitler.png')
+        self.canvas.create_image((0,0), image=self.hitler_image)
 
 
 def main():
     global root
     root = tk.Tk()
     app = Application(master=root)
+    app.pack(side='top', fill='both')
     app.mainloop()
 
 if __name__ == "__main__":
