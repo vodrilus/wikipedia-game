@@ -1,9 +1,7 @@
 """The Wikipedia Game
 
 How many clicks to Hitler?
-https://en.wikipedia.org/wiki/Wikipedia:Wiki_Game
-
-No win condition yet."""
+https://en.wikipedia.org/wiki/Wikipedia:Wiki_Game"""
 
 import tkinter as tk
 import tkinter.messagebox as tkmb
@@ -26,10 +24,7 @@ class Application(tk.Frame):
         
         self.start_button = tk.Button(self.control_group)
         self.start_button['text'] = 'New Game'
-        self.start_button['command'] = self.newGame     
-
-        self.QUIT = tk.Button(self.control_group, text='QUIT', fg='red',
-                              command=root.destroy)
+        self.start_button['command'] = self.newGame
         
         self.current_page_label = tk.Label(self.control_group)
         self.current_page_label['text'] = 'Current Page'
@@ -40,7 +35,6 @@ class Application(tk.Frame):
         self.current_page_label.pack(side='bottom')
         self.current_clicks_label.pack(side='bottom')
         self.start_button.pack(side='bottom')
-        
         
         self.control_group.pack(side='top', fill='x', expand=True)
 
@@ -53,26 +47,17 @@ class Application(tk.Frame):
         self.scrollbar.pack(side='right', fill='y')
         self.canvas.pack(side='left', fill='both', expand=True)
         
-        
-
     def createLinkButtons(self):
-        print('Creating link buttons.')
         if self.current_page is None:
-            print('-Current page is None.')
             return
-        print('-Destroying children.')
         for child in self.frame.winfo_children():
             child.destroy()
-            print('-- Child destroyed.')
-        print('-Creating new buttons.')
         for i in range(len(self.current_page.links)):
             link = self.current_page.links[i]
             #print(link)
             button= tk.Button(self.frame, text=link,
                               command=(lambda l=link: self.followLink(l)))
             button.grid(row=i//4, column=i%4)
-            print('--Button created.')
-        print('-DONE Creating link buttons.')
 
     def onFrameConfigure(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox('all'))
@@ -102,10 +87,9 @@ class Application(tk.Frame):
                 self.current_page = wp.page(title=title)
                 break
             except wp.exceptions.DisambiguationError as e:
-                tkmb.showerror(str(type(e)), str(e))
+                tkmb.showerror(str(type(e)), str(e)) # TODO: Allow choice
                 title = random.choice(e.options)
                 self.current_page = wp.page(title)
-                print('DisambiguationError handled')
                 break
             except Exception as e:
                 tkmb.showerror(str(type(e)), str(e))
